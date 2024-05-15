@@ -364,3 +364,205 @@ Runs the training loop
 * Model weights are updated by a step in the opposite direction of the loss gradient, the length of the step depends on the learning rate witch is a parameter
 
 The Trainer class automatized this for us.
+
+## Sequence labeling
+
+### SL Definitions
+
+Basic task setting:
+
+* Input: text represented as sequence of tokens
+* Output: label(s) for each _token_ from predefined categories
+
+For most tasks, exactly one label per token
+
+Contrast with text/document classification: Label(s) for _text as whole_
+
+#### Terminology
+
+* Some sequence labeling tasks termed "token classification"
+  * Note potential confusion with "sequence classification" for document classification
+* Label, class and tag are here _largerly synonymous_ depending on task
+
+### SL Tasks
+
+* POS - Part Of Speech tagging, labels: VERB, NOUN, ADJ, ...
+* NER - Named Entity Recognition, labels: PERSON, LOCATION, ORGANIZATION, ...
+* Chunking / partial parsing, spans corresponding to for example verb and noun phrases
+
+Also segmentation, morphological tagging, semantic role labeling, text zoning (introduction, methods, results, etc.) Generally any task involving marking _spans_
+
+### SL as feature generation
+
+In a "traditional" NLP pipeline, sequence labeling tasks used in part to create features for later tasks, for example:
+
+* Parts of speech serve as features to indentify noun and verb phrases (chunking)
+* Parts of speech and chunk tags serve as features to identify named mentions
+
+Explicit features introduced in this way generally not used in recent deep learning approaches, here still used for illustration and interpretability
+
+#### SL Challenges
+
+Ambiguity and context dependence:
+
+* POS tagging: "can" as noun vs. aux verb, "house" as noun vs. verb
+* NER: "Washington" as person vs. location, "Nokia" as organization vs. location
+
+Label dependencies:
+
+* POS (DET, NOUN) likely e.g "the dog", (DET,VERB) unlikely e.g "this is"
+* NER (B-PERSON, I-PERSON) is valid, (B-PERSON, I-ORGANIZATION) is invalid
+
+### SL Representation
+
+Build on ideas from document classification:
+
+* Supervised machine learning: train model based on annotated corpus
+* Explicitly defined features: manually build appropriate features for task
+
+By contrast to document classification approach, we _cannot_ apply a simple bag-of-words approach to sequence labeling and
+hope for good results
+
+* Losing order of words would make many cases _undecidable_
+* Consider "We can see a can"
+
+We _cannot_ simply consider each token as its own "document" == needs context, or just make a BOW from a whole sentence == cannot differentiate!
+
+Instead we'll here rely on two well-tested ideas for representing text for sequence labeling:
+
+1) Context windows: Create features form fixed-size "window" of tokens before and after each token we're classifying
+2) Relative positions: Represent the position of context tokens and their features with respect to the token we're classifying.
+
+#### SL Context window
+
+Most sequence labeling decisions are comparatively _local_, with distant tokens contributing little useful information
+
+* Especially POS tagging and other morphology-level labeling largely sentence-internal
+
+For classifying a token, only represent information from its immediate context instead of e.g entire document.
+
+#### SL Relative positions
+
+The _order_ in which tokens appear in the input is key to many sequence labeling tasks, POS tagging for example.
+
+* "can see a..." -> "can" is auxiliary verb
+* "see a can..." -> "can" is noun
+
+The key piece of information is _not_ absolute position in the input, but relative position with respect to the token being labeled
+
+Explicitly encode relative position to focus word in features
+
+##### Explicit features
+
+For document classification each word form was used as its own separate feature
+
+* Features include eg ```cat```and ```dog```for words _cat_ and _dog_
+
+More generally we can explicitly define any feature we like
+
+We'll here represent these in text, for example:
+
+* ```token[-1]=dog```the preceding token is "dog"
+* ```pos[+1]=NOUN```the next token is a noun (POS tag has value NOUN)
+* ```chunk[0]=B-NP```the current token starts a noun phrase
+
+Note: these are _text strings_ representing the presence of a feature; there is nothing special about their form.
+
+Explicit feature representations allow us to represent arbitrary categorical information about the focus token and context tokens, e.g.
+
+* Does the token start with a capital letter?
+* What are the last two characters of the token?
+* What two-word sequence (bigram) starts at the token?
+* Does the token appear in a list of known names?
+* Does the token consist only of letters / digits / puncts?
+
+Categorical features can also be introduced for the window, sentence or document as a whole, and for some ML methods features can also be given weights TF/IDF
+
+### SL Sum
+
+Each token in the dataset form its own example of classification, where:
+
+* Features are generated from a _fixed-size window_ around the token
+* _Relative position_ with respect to the focus token is represented to capture word order and distance
+* _Explicit features_ are defined to represent relevant information about the focus token and other tokens in the window (surface form)
+
+We can use these as a "bag of features" with the MLP classifier
+
+#### What's still missing?
+
+For MLP represented is:
+
+* Context window (locality)
+* Relative word order (sequence order, distance)
+* Arbitrary categorical aspects of the input (explicit features)
+
+However, predictions for each token were made _independently_ of each other
+
+* No attempt to model label dependencies
+* May predict very unlikely or invalid label sequences
+
+### SL Methods
+
+Sequence labeling tasks can be addressed through _heuristic_ and _rule-based_ approaches
+
+* For example, dictionary-based approach to NER: compile lists of known names with types (person etc), find occurences in the text
+
+State-of-the-art sequence labeling methods are based on supervised ML. Broadly speaking almost any ML method _can_ be used for sequence labeling. Methods that inherently capture sequential nature of data and can model _label dependencies_ are particularly good fit
+
+Methods capturing sequential order and/or label dependency information include:
+
+* Hidden Markov Models (HMM)
+* Conditional Random Fields (CRF)
+* Recurrent Neural Network (RNN)
+  * Long Short-Term Memory (LSTM)
+  * Gated Recurrent Unit (GRU)
+* Transformer models
+  * Bidirectional (BERT)
+  * Encoder - Decoder (T5)
+
+### SL Models
+
+#### Basics of graphical models
+
+![first](grap1.png)
+Two states (Sunny and cloudy) with probabilities of transitioning between the two ased on the current state: a _first-order_ markov model
+
+For each state, we have a probability of _starting_ the prcoess in the state
+
+![second](grap2.png)
+
+For each state, we have probability of _emitting_ a particular _observation_
+
+![third](grap3.png)
+
+#### HMM
+
+First-order Hidden Markov MOdel (HMM) is defined by:
+
+* Set of (hidden) states X_1,...,X_n and possibe outputs Y_1,.. Y_m
+* Start probabilities for each state
+* Transition probabilities between states
+* Emission or output probabilities for each state and output
+
+Given this information, we can answer questions such as:
+
+* What is the probability of a particular state sequence?
+* What is the probability of a particular output?
+* What is the probability of a state sequence _given_ output?
+
+In basic application to sequence labeling, the hidden states Y_i correspond to the labels (POS or NER tags for example) and the outputs X_i to tokens
+
+Parameters can be straightforwardly set given annotated data
+
+#### Metrics
+
+_Token-level_ classification _accuracy_ (correct predictions out of all predictions) generally used to evaluate task
+
+For tasks invlving marking _spans_ (NER) performance typically measured on span level in terms of exact-match precision, recall and F_1 score
+
+* Compare predicted and gold standard spans in terms of (start-token, end-token, type)
+  * Only triples where all values match between predicted and gold are correct
+* Precision: fraction of predicted spans that are correcnt
+* Recall: fraction of gold standard spans that are correctly predicted
+* F_1-score: balanced harmonic mean of precision and recall
+
