@@ -539,7 +539,7 @@ For each state, we have probability of _emitting_ a particular _observation_
 
 First-order Hidden Markov MOdel (HMM) is defined by:
 
-* Set of (hidden) states X_1,...,X_n and possibe outputs Y_1,.. Y_m
+* Set of (hidden) states $X_1,...,X_n$ and possibe outputs $Y_1,...,Y_m$
 * Start probabilities for each state
 * Transition probabilities between states
 * Emission or output probabilities for each state and output
@@ -550,7 +550,7 @@ Given this information, we can answer questions such as:
 * What is the probability of a particular output?
 * What is the probability of a state sequence _given_ output?
 
-In basic application to sequence labeling, the hidden states Y_i correspond to the labels (POS or NER tags for example) and the outputs X_i to tokens
+In basic application to sequence labeling, the hidden states $Y_i$ correspond to the labels (POS or NER tags for example) and the outputs $X_i$ to tokens
 
 Parameters can be straightforwardly set given annotated data
 
@@ -564,5 +564,231 @@ For tasks invlving marking _spans_ (NER) performance typically measured on span 
   * Only triples where all values match between predicted and gold are correct
 * Precision: fraction of predicted spans that are correcnt
 * Recall: fraction of gold standard spans that are correctly predicted
-* F_1-score: balanced harmonic mean of precision and recall
+* $F_1$-score: balanced harmonic mean of precision and recall
 
+## Language models
+
+### LM Definitions
+
+Task setting:
+
+Learn to assign probabilities to sequences of words
+
+* Input: corpus of raw, unannotated text (typically very large)
+* Output model that can estimate $P(w_1, w_2, w_3, ... , w_n)$ i.e how likely is the word sequence in the language
+
+Language modelling methods and uses changed dramatically over last decade
+
+* Traditionally: n-gram models (bigram, trigram, ...) and approaches based on _counting_
+* Recently: Neural network models (MLP, RNN, transformer) trained in _predicition_
+
+Probability of word sequence estimated via probabilities of individual words in their context. Language models can be grouped into two broad categories by how that context is defined:
+
+* Causal LMs: Estimate probability of word given previous words only only! (one-directiona, "left-to-right")
+* Bidirectional LMs: Estimate probability of word given both preceding and following words
+
+Broadly speaking, causal LMs are particularly effective in _generation_ and bidirectional LMs in _classification_
+
+#### LM Tasks
+
+##### Traditional tasks
+
+* Spell and grammar checking: Detecting and correcting errors in text
+* Short text generation: autocomplete, predictive text input
+* Speech recognition: phoneme and word prediction
+* Machine translation: ranking alternative translations
+* Language identification: which language is text most likely in
+* Text quality filtering
+
+Broadly tasks involving _identifying unlikely spans_ of text or _ranking alternatives_ by their likelihood or belonging to a language
+
+##### Modern tasks
+
+* Chatbots: natular language dialogue on arbitrary topics
+* Question answering: providing relevant responses to queries
+* Summarization: short abstractive versions of input text
+* Code completiong: software develpment support
+* Machine translation: end-to-end translation, e.g. Finnish in, english out
+* Zero- or few-shot tasks: e.g. text classification with very few examples
+
+And many many more, increasingly any "low-lever" cognitive task that people can perform without training
+
+## Count-based language models
+
+Count-based modelling is a simple statistical approach to creating LMs. In the most typical case
+
+* Input: sequence of words $(w_1 w_2 w_3 ...)$ representing large text corpus
+* Output: model that can estimate probability of word given previous words $P(w_n | w_1 w_2 w_{n-1})$
+
+Approach is estimating probability P using occurence counts C in corpus. There is an obvious issue with naively applying the probability estimate. Namely for every longer sequences of words, _the counts will be zero_. Key challenge for count-based LMs is the _sparsity of the data_, almost all interesting non-trivial texts will be entirely novel == new and original.
+
+Example: What is the next word in the headline:
+"Trump faces 'Real Danger Zone' from Mike Pence ..."?
+
+### N-grams
+
+_Data is finite_ and the counts of almost all longer word sequences will be zero.
+
+Solution: instead of using the full "history" of previous words, only consider the previous _N_ words
+
+* Bigram model: $P(w_n | w_{1:n-1})$
+* Trigram model: $P(w_n | w_{n-2:w-1})$
+* 4-gram model: $P(w_n | w_{n-3} w_{n-2} w_{n-1})$
+
+Roughly in practice, bigram and trigram models simple to make but weak, 4- and 5-gram require substantial data, and larger than 7-gram rare due data requirements
+
+N-gram model can be estimated from counts using _maximum likelihood estimate_
+
+$P(w_n | w_{n-N+1:n-1}) = C(w_{n-N+1:n}) / C(w_{n-N+1:n-1})$
+
+For example, for a bigram model we have simply:
+
+$P(w_n | w_{n-1}) = C(w_{n-1:n})/C(w_{n-1})$
+
+The probability estimate for a longer text can then be calculated using the _chain rule_
+
+$P(w_1,...w_n) = \prod_{k \in \{1,...,n\}}P(w_k|w_{k-N+1:k-1})$
+
+#### Smoothing and backoff
+
+N-grams make count-based approach _possible_, but _zero counts_ will remain. Zero counts lead to $P(words) = 0$ estimates, which is useless for most applications.
+
+Solution: apply _smoothing_ to either counts or probability estimates to avoid zeros
+
+* Add-one smoothing == Laplace smoothing: simply add 1 to all counts
+* Add-k smoothing: add fixed value k to counts (typically $k < 1$)
+* Advanced smoothing methods: Knerser-Ney, Good-Turing, etc.
+
+Alternatively when encountering a zero count, _back off_ from using an N-gram estimate to using an (N-1)-gram estimate 
+
+#### Numerical precision
+
+Applying the chain rule to estimate the probabilities of a longer text involves _multiplying togeher many small probabilities_
+
+Mathematically this is fine, but computers have limited ability to represent very small or very large values
+
+remember float restrictions!
+
+Solution: use log probabilities:
+
+$p_1 \cdot p_2\cdot...\cdot p_n = exp(log(p_1)+log(p_2)+...+log(p_n))$
+
+### Generation
+
+Given a causal language model, it's straightforward to generate text:
+
+1) Initialize _text_ to desired "prompt" or a start-of-text token (e.g. `<s>`)
+2) Select next word _w_ from $P(w | text)$ and append it to _text_
+3) Repeat previous step as long as desired (e.g. max-tokens or `</s>` sampled)
+
+A naive selection strategy for step 2. is to always take the _most likely next word_ w:
+
+$argmax_wP(w|text)$
+
+BUT this type of _greedy decoding_ often gets trapped in repetition loops:
+
+```"I don't know. I don't know. I don't know".```
+
+and only produces "predictable" text. Strategies for better generation than greedy decoding include
+
+* Randomly sampling the next word from the distribution $P(w | text)$
+  * _Temperature_ parameter to (de)emphasize likely words
+  * Limiting to _top-k words_ or a probability treshold (_top-p_ aka _nucleus sampling_)
+* _Beam search_ to find likely sequences that start with a less likely word
+* Filtering for redundancies, "bad words", etc
+
+![generation](generation.png)
+
+### Evaluation
+
+Two common settings for LM evaluation:
+
+1) Use _text to evaluate model_ or compare models, which assumes good text
+2) Use _model to evaluate texts_, which assumes good model
+
+For either case, the most common evaluation metric for LMs is _perplexity_ (PPL), the inverse probability of text normalized by the number of words
+
+$PPL(w_1w_2...w_n) = P(w_1w_2...w_n)^{-1/N}=\sqrt[n]{\frac{1}{P(w_1w_2...w_N)}}$
+
+PPL can be thought of as the weighted average number of words that can follow a word.
+
+### N-gram limitations
+
+N-gram models have been a key tool in NLP for decades, but have their clear limitations:
+
+* _Limited use of context_ due to short history (N) and unidirectionality
+* _Data sparcity_ means difficult estimating rare N-grams
+* _High resource usage_ due to storage of large N-gram tables
+* _No word similarity_ `cat != dog`, `cat != hat`
+* Fixed vocabulary, out-of-vocabulary (OOV) words
+
+## Prediction-based language models
+
+Basic setup dentical to count-based models:
+
+* Input: sequence of words $(w_1,w_2,...)$ representing large text corpus
+* Output: model that can estimate probability of word given previous words $P(w_n | w_1,w_2,...w_n)$
+
+Instead of deriving $P(words)$ from counts, predict it directly. Basically any method capable of learning to predict a probability distribution is applicable, but in practice focus on _neural network_ models: MLP, RNN, etc.
+
+### LMs as representation learners
+
+Language model solves in the end quite complex task. Prediciting the next word is by no means easy. Requires a good understanding of the language structure. Requires word knowledge (!) These properties make language modelling a good general task to learn representations of text units == embeddings
+
+* Focus on _word_ embeddings
+* In later courses we expand to longer text segments
+
+#### Two-sided context
+
+Language models are traditionally causal (left-to-right). This is due to how they were typically used in applications.
+
+* E.g. speec recognition lattice decoder
+
+For representation/embedding learning, we can also consider language models with two-sided context. This is due we do not benefit from causality, almost the contrary.
+
+#### The word2vec model
+
+`Yle website targeted in ____ attack`
+
+Given this context, we want to predict the missing word, as a distribution. Word2vec is a very influential model in NLP. Makes two simplifying assumptions:
+
+* Limit the left and right context window length
+* Disregard word order
+
+##### Language modelling as BoW classification problem
+
+When you think about it, this is casting language modelling as a simple bag of words classification problem:
+
+* Bag of Words as the input features
+* Multiclass classification with every word in the vocabulary being one possible class
+* Because we want the embeddings of input features / words
+
+#### Word2vec continue
+
+* A linear MLP
+* Input/output layers as wide as the vocabulary
+* Input-to-hidden layer weights learn embeddings
+* Hidden-to-output layer weights discarded after training
+* Embeddings are relatively short vectors
+* $D(embedding lenght)$ is some 200-300
+
+##### Word2vec training "Context BoW"
+
+Can be trained as a normal classifier. Context goes in as bag of words. Word in the example is predicted.
+
+##### Word2vec training "skip-gram"
+
+Reduced to word pairs, given a single word, predict the distribution of words nearby. Thanks to the linear structure of the model, this is really not much different from CBOW above
+
+#### W2V embeddings
+
+Word2vec is trained on very large textual corpora. This is easy and very fast, the model is simple and includes several technical optimizations. After training, we retrain the embedding matrix of the model. Every vocabulary word thus has a single static learned vector embedding. "Similar" words get numerically similar embeddings.
+
+##### W2V usage
+
+* Primary use: pretrained representations that can be used to initialzie the embedding matrix of models for downstream tasks
+* The embeddings encode information about the meaning of words, even if they are rare / missing in the supervised training data, which is often quite small
+
+For example the word "crummy" might be seen only once in the IMDB training data, bot giving enouch opportunity to learn it as a negative feature. The word2vec embeddings are trained on much larger textual corpus, and the _embeddings for "crummy" is close to other negative words which the classifier may benefit from_.
+
+The embeddings are affected by the w2v training data. Embeddings are one by word, conflating (== uniting) the different meanings of a ambiguous words. The embeddings are also _static_, unaffected by the present context in which the word is used.
