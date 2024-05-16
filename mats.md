@@ -792,3 +792,82 @@ Word2vec is trained on very large textual corpora. This is easy and very fast, t
 For example the word "crummy" might be seen only once in the IMDB training data, bot giving enouch opportunity to learn it as a negative feature. The word2vec embeddings are trained on much larger textual corpus, and the _embeddings for "crummy" is close to other negative words which the classifier may benefit from_.
 
 The embeddings are affected by the w2v training data. Embeddings are one by word, conflating (== uniting) the different meanings of a ambiguous words. The embeddings are also _static_, unaffected by the present context in which the word is used.
+
+##### Properties of embeddings
+
+* Small context windows (+/-2): nearest words are syntactically similar words in same taxonomy.
+  * Nearest neighbours for "hogwards" are other fictional schools: "sunnydale", "evernight", "blandings"
+* Larger context windows (+/-5): nearest words are related words in same _semantic_ field:
+  * Hogwarts nearest neightbors are Harry Potter world: Dumbledore, half-blood, Malfoy
+
+##### Word analogy
+
+Does not work nearly as often as you'd like, but it is very impressive when it does work.
+
+Embeddings reflect the data meaning compute a bias for every adjective for example how much closer the adjective is to "woman" synonyms than "man" synonyms or names of particular ethnicities
+
+* Embeddings for competence adjective (smart, wise, brilliant, resourceful, thoughtful, logical) are biased towards men, a bias slowly degreasing 1960-1990
+* Embeddings for dehumanizing adjectives (barbaric, monstrous, bizarre) were biased towards Asians in the 1930s, bias decreasing over the 20th century
+
+##### Alignment of embedding spaces
+
+* Cross-lingual embeddings: a shared embedding space across languages
+* The goal is to embed meaning, not words
+* Same meaning (regardless of language) == same/near vector representation
+
+Embeddings can shift in vector on timeline!
+
+There are two general ways of alignment of embedding spaces.
+
+1) Build an aligned space from scratch
+2) Build two separate spaces and map them onto each other after the fact
+
+##### Alignment though pseudowords
+
+* Gather a multilingual corpus of texts
+* Train a single set of embeddings on the multilingual data
+* But there is no signal forcing alignments to emerge, the languages will end up living in their own subspaces
+* Solution: Replace words by multilingual pseudowords
+  * A large dog#koira runs in the yard#piha
+  * Suuri dog#koira juoksee pihalla
+* Then learn the embeddings the usual way, on the multilingual data
+* The pseudoword embediings are forced to be the same across the languages
+* And that has effect on other embeddings too, effectively "forcing" the spaces to align
+
+##### Alignment through mapping
+
+* Given two embedding spaces and a set of word/vector pairs between these, we can induce a tranformation matrix mapping from one space to another
+
+##### Cross-lingual alignment
+
+* in other words we need a set of word pairs between two languages, and their respective monolingual embeddings
+* This can be seen as "training" data for inducing the mapping matrix $M$. The matrix $M$ minimizes the mean square error (MSE) between $SM$ and $T$ target
+* Dimenionality does not need to match
+
+#### Embeddings evaluation
+
+There are many methods to induce word embeddings from text and different parameters for one method.
+
+How can we evaluate the embeddings?
+
+* Intrinsic: Direct evaluation of the properties of the embeddings
+* Extrisic: Evaluation of the embeddings in a downstream task for example incorporating the embeddings in a classifier / tagger and observing the performance on some classification / tagging taks
+
+##### Intrisic
+
+* Word similarity
+* Word analogy: `A is to B as C is to ___`
+  * Implemented arithmetically as $B-A+C$
+* Concet categorization
+  * sandwich, tea, pasta, water should form 2 groups (food, drink)
+* Outlier detection
+  * breakfast, _cereal_, dinner, lunch
+
+##### W2V influence to NLP
+
+W2V and other similar models were an important stepping stop towards todays NLP. In particular the present-day GPT models can be seen as a culmination of work which set out to:
+
+* Make embeddings not static == make them context-dependent
+* Deal with out-of-vocabulary items
+
+Very roughly the progression was Word2vec -> convolutional NNs -> recurrent NNs -> attention models / Transformer NN
