@@ -6,20 +6,33 @@ Notes from lecture slides
 
 ### What is HLT
 
-Natural language equals human language, different from formal and artificial languages such as programming languages
+Natural language equals human language, different from formal and artificial languages such as programming languages. Human language is natural or organic and does not follow a certain syntax in cotrast to a programming language. Only grammar to use as guidelines
 
 2 key challenges
 
-* Variety:
-  * Same meaning can be expressed in many different ways
+* _Variety_:
+  * Same meaning can be expressed in many different ways. Same idea can be expressed in multiple different ways for example using different sentece structures or different words
+  * Much obliged - Thank you
+  * You're welcome - You got it - Anything for you
   * You don't get it - You don't understand it
-* Ambiguity
+  * Leave a message, i'll get back to you - Leave me a message and i will call you back
+* _Ambiguity_
   * Same form can express different meanings based on context
-  * different meanings for eg. tie
+  * WORD LEVEL AMBIGUITY:
+    * different meanings for a single word eg. tie:
+    * VERB: attach or fasten with string or similar cord
+    * NOUN: a strip of material worn round the collar and tied in a knot
+    * NOUN: a result in a game in which two or more competitors have the same score
+  * SENTENCEL LEVEL AMBIGUITY:
+    * Kids make nutritious snacks: Are the kids making the snacks or used as snacks?
+    * She killed the man with the tie: Was the man wearing the tie or was it the murder weapon
 
 ### NLP
 
 Computational methods to analyze, understand or generate human language
+
+Computer science approach: Create methods for NLP tasks
+Linguistic approach: Use the methods created to analyse some linguistic side problem
 
 #### Applications
 
@@ -30,8 +43,8 @@ Language is the most efficient way we have to communicate _meaning_
 
 A large portion of what is presented as AI is actually build on NLP models:
 
-* DALL-E
-* MusicLM
+* DALL-E -- Creates pictures based on natural language prompt given
+* MusicLM -- Creates music based on natural language prompt
 
 Text correction and generation
 
@@ -41,10 +54,10 @@ Text correction and generation
 
 Web search includes a lot of NLP
 
-* Disambiguation
-* Text classification
-* Information retrieval
-* Question answering
+* Disambiguation -  process of distinguishing between similar things, in other words context of the search query
+* Text classification - ""safe search"" allows to filter web pages with predictive labels
+* Information retrieval - matching relevant web pages with the search query
+* Question answering - google search directly generates answer with generative NLP task
 * Information extraction
 
 Machine Translation
@@ -53,13 +66,15 @@ Machine Translation
 
 Chatbots and generative AI
 
-Text to speech
+Text to speech from example a.i.mater
 
 * Eg. speak written books with ai machine voice
 
 Speech recognition and subtitling
 
-Filterin and moderation support via:
+Speech regocnition model listens audio and transcribes text. Used for youtube for example
+
+Filtering and moderation support via:
 
 * Sentiment analysis
 * Text filters
@@ -72,13 +87,75 @@ Filterin and moderation support via:
   * How many words / chars
   * word frequencies
 
-* Segmentation == Divide bigger units into smaller ones
-  * Almost always part of raw text preprocessing in NLP pipeline
-  * _Tokenization_ / _word segmentation_
+* Segmentation == Divide bigger units into smaller meaningful ones: eg. book in to chapters or sections, sections to paragraphs, paragraphs in to sentences, sentences in to words, words in to chars.
+  * Almost always part of raw text preprocessing in NLP pipeline!
+  * _Tokenization_ == word like element without punctuations / _word segmentation_
     * Segment text into individual tokens == word-like elements
-    * _Sentence splitting / sentence segmentation_ == Segment text into individual sentences
+    * _Sentence splitting / sentence segmentation_ == Segment text into individual sentences. Why: for example sentence parsing for analysing how it is built
     * _Stemming / lemmatization_ == reduce words to base forms
     * _Syntactic analysis / parsing_ == Identify syntactic structure of sentences
+
+###### Tokenization
+
+Tokenization workflow:
+
+1) Split text from whitepsace characters, taken into account punctuation
+2) Regular expressions: define search patterns, find these from raw text or find-and-replace if needed
+3) Find all punctuation characters and replace with whitespace + punctuation character
+4) Usually _it is not that important_ how exactly you do it, just be consistent!
+
+* Works quite well for English, Finnish, Swedish, approx 97-99% on clean text
+* Many tokenizers are just a large number (in the hundreds) of regular expressions
+
+But does not work for all
+
+All languages do not use whitespace or punctuation or the meaning of those may be different
+
+* Chinese, thai, vietnamise
+
+Naive algorithm 1
+
+1) Build a vocabulary for the language
+2) Start from the beginning of the text and find the longest matching word
+3) Split the matching word and continue from the next remaining character
+
+the table down there --> thetabledownthere --> theta bled own there
+
+Does not work for English, but in Chinese words are usually 2-4 chars long so the simple algorithm works
+
+Where to get the dictionary?
+
+###### State-of-the-art SOTA
+
+The best existing method currently known.
+
+* Machine learning
+  * Collect raw (untokenized) text from language you are in interested (news articles, internet) and manually tokenize it
+  * Train a classifier
+  * The trained classifier can be used to tokenize new text
+
+###### Sentence splitting
+
+Naive method 1: What kind of punctuation characters end the sentence?
+
+* Yes: ?!.
+* No: ,
+
+Define a list of sentence-final punctuation, and always split on those. Problems?
+
+Dot can be used in context such as abbreviations
+
+Solution: Define a list of rules to indentify when punctuation does not end a sentence
+
+* List of known abbreviations, list of regular expression to recongnize numbers
+* How about missing puctuation ? Other languages ?
+
+###### State-of-the-art
+
+* Machine learning
+  * Collect raw text fro the language you are interested in, and manually sentence segment it.
+  * Train a classifier
+  * The trained classifier can be used to sentence sengment new text
 
 ## CORPORA
 
@@ -90,13 +167,16 @@ A corpus is a _structured_ and _documented_ collection of language data
 Corpora come in a broad variety of types, from minimally structured (doc boundaries only) to comprehensively analyzed (Universal dependencies)
 
 Corpora are the fuel that powers NLP, and the ability to use and create corpora if necessary is a key skill
+This is because you are not able to use any machine learning based tools if you cannot train a model using a corpus! Or to evaluate performance of your model
 
 ### Definitions
 
 Text corpora can be broadly categorized by their annotation
 
 * Raw text corpora: Plain, unstructured
-* Annotated text corpora: markings from some information of intrest
+* Annotated text corpora: markings from some information of intrest to addition of the raw text
+
+e.g.: collection of documents in different language with language name given as annotation.
 
 Annotations can be almost anything: Language, domain, genre, topic, sentence/token boundaries, morphology, syntax, fluency, sentiment, emotion, toxicity, names, dates, addresses, relations, events.
 
@@ -109,7 +189,7 @@ Can be categorized into two different things:
 * Manually annotated corpora: Annotations made by humans
 * Automatically annotated corpora: Annotations made by a machine
 
-Also it's common for manually annotated corpora to use some level of automation == Though correction of machine-predicted annotations.
+Also it's common for manually annotated corpora to use some level of automation == Through correction of machine-predicted annotations.
 
 Manually annotated corpora are generally preferred for _quality_, but typically have much higher _cost_ to create
 
@@ -118,7 +198,7 @@ Manually annotated corpora are generally preferred for _quality_, but typically 
 Raw text corpora without annotation are broadly used in NLP, not only as material for _linguistic analysis_ but also for _training language models_.
 
 * Large neural models trained on unannotated text (eg. to predict next word) are the basis for many breakthrough advances in NLP over the last 5+ years
-* For example GPT-3 was trained only on unannotated data (mostly web crawl), while ChatGPT and GPT-4 training also includes annotated data.
+* For example GPT-3 was trained only on unannotated data (mostly web crawl), while ChatGPT and GPT-4 training also includes annotated data. The annotated data is used to fine-tune the models.
 * The size of corpora that can be effectively used in NLP has increased massively in the last decades: BNC(British national corpus) 100milloin words at -94, now biggest models use more than trillion words.
 
 #### Annotated corpora
@@ -141,7 +221,7 @@ Representations of annotations can be grouped into two primary categories:
 ### Annotation tasks
 
 * Text classification: Genre, topic, sentiment ...
-* Token/span classification: part-of-speec, named entity recognition, chunking
+* Token/span classification: part-of-speech, named entity recognition, chunking
 * Token/span normalization: entity linking, lemmatization, word sense disambiguation ...
 * Relation annotation: Dependency syntax, entity relation, coreference
 * Free-text annotation: Question answering, translation, summarization
@@ -235,40 +315,41 @@ The choise of text source depends on goals: for example, unannotated corpora ten
 
 Process:
 
-* IN: document
-* OUT: label(s)
+* IN: document - Document can be anything from a few words to a whole book
+* OUT: label(s) - can be anything from positive/negative to hierarchies of tens of thousands of classes
 
-To be understood in a very broad sense
+To be understood in a very broad sense anything between a sentence and a book
 
-* Document can be anything from a few words to a whole book
-* Label can be anything from positive/negative to hierarchies of tens of thousands of classes
-
-Binary classification: One positive/negative label to be predicted, a special case of multi-class with class number == 2
-Multi-class classification: one label from a larger label vocabulary to be predicted
 Multi-label: a number of labels to be predicted from a larger label vocabulary
 
-#### Binary classification
+#### Binary classification, classes == 2, one predicted
+
+Only two possible outcomes 0 / 1. Either document has this property or not e.g. negative or positive, spam or not spam. A special case of multi-class with class number == 2. Usually a simplification of the real problem, sentiment is not black and white, fakenews is not usually quite so binary.
 
 * Spam detection
-* Sentiment analysis (pos/neg)
-* Fake news detection
-* Churn prediction
-* Legal document classification
-* Clickbait Detection
+* Sentiment analysis (pos/neg) - tweets for example
+* Fake news detection - fake or not
+* Churn prediction - a measurement of the percentage of accounts that cancel or choose not to renew their subscriptions
+* Legal document classification - is document relevant to my case or not
+* Clickbait Detection - is this newspiece that google wants to show in its newsfeed this is actual news or a clickbait for advertisement of sorts
 
-#### Multi-class classification
+#### Multi-class classification, classes > 2, one predicted
 
-* Topic categorization
-* Language identification
-* Handwriting recognition
-* Emotion detection
-* Product actegorization
+ONE SINGLE LABEL from a larger label base to be predicted
+
+* Topic categorization - piece of news -> assign exactly one topic
+* Language identification - large web crawl of data, label documents with language indentification
+* Handwriting recognition - image identification, identifying letters from handwriting alphabets A,B,C etc. as _labels_
+* Emotion detection - spectrum of emotions 8 - 10 and you want to decide what emotion this document representes
+* Product categorization
 * Customer segmentation
-* Document genre classification
-* Essay grading
-* ChatGPT :o'
+* Document genre classification - news, advertimement e.g. for labels
+* Essay grading - predict a grade between 1-5
+* ChatGPT :) - multi class classification generating text. predicts the next word as a classification problem 80000 classes
 
-#### Multi-label
+#### Multi-label classification, classes > 2, MULTIPLE classes
+
+MULTIPLE labels predicted from a larger base of labels
 
 * Set of topics to a document from a larger topic category
 * MeSH Medical Subject Headings classify each biomedical publication with 10-15 terms
@@ -770,7 +851,7 @@ When you think about it, this is casting language modelling as a simple bag of w
 * Input-to-hidden layer weights learn embeddings
 * Hidden-to-output layer weights discarded after training
 * Embeddings are relatively short vectors
-* $D(embedding lenght)$ is some 200-300
+* $D(embedding length)$ is some 200-300
 
 ##### Word2vec training "Context BoW"
 
@@ -871,3 +952,204 @@ W2V and other similar models were an important stepping stop towards todays NLP.
 * Deal with out-of-vocabulary items
 
 Very roughly the progression was Word2vec -> convolutional NNs -> recurrent NNs -> attention models / Transformer NN
+
+## Deep learning
+
+Deep learning is a hot topic, not only within ML and NLP.
+
+NLP models based on deep learning are _in the news every day_,  althouh they're not always called NLP models
+
+Deep learning is a subset of ML using neural networks with _multpile layers_
+
+* The "deep" in deep learning just refers to the depth of the NN in terms of layers. It has nothing to do with "deep understanding"
+
+Deep architechtures enable NNs to learn _hierarchical representations_, where successive layers capture progressively more complex patterns. The potential _benefits of deep NN architectures_ have been known about for long, but only started to be broadly realized over the last 10 years.
+
+Learned _hierarchical representations are easy to show for image recognititon:
+
+Input layer is pixels, other layers capture increasingly _high-level_ features. Classification (e.g. face recognition) is easy given high-level features. The layer-to-layer mappings are all learned (representation learning)
+
+Hierarchical representation learning is seen also in deep NNs for language:
+
+* Lower layers capture _POS and phrase structure information_
+* Middle layers capture _entities and semantic roles_
+* Upper layers capture _coreference and entity relations_
+
+Deep learning architectures have been pursued for decades; major breakthroughs in the last decade facilitated by:
+
+* _Big data_, in particular datasets derived from internet crawls
+* Increase in _computational power_ especially GPU-accelerated training
+* _Algorithmic improvements_, both in NN architectures as well as in activation function, optimizers, etc
+* _Transfer learning_ especially _pretraining_ on unlabeled data followed by _fine-tuning_ on task-specific data
+
+### Big data
+
+"Traditional" machine learning methods are effective when trained on _comparatively small_ datasets but often fail to take advantage of massively larger data. On the contrary _Large NNs_ are mostly useless when trained on small datasets, but perform well on large data and _continue to improve_ with more data as long as network size is scaled with data.
+s
+As _Internet-scale datasets_ have become more common readily available and approaches _training on unannotated data_ more common, deep NNs are increasingly favored.
+
+The size of training data continues to increase `["GPT-1": 4Gb, "GPT-2": 40Gb, "GPT-3": 400Gb, "GPT-4":"unk"]`
+
+Largest training datasets have been on an exponential growth curve, with benefits from scale continuing to this day. The amount of _high-quality text_ likely to increasingly to become a _key limitation_ for the largest models, especially for smaller languages.
+
+### Computational power
+
+Large NN models are now almost excusively trained using _hardware acceleration_ (GPUs / TPUs)
+
+* GPU == Graphics Processing Unit
+* TPU == Tensor Processing Unit
+
+GPUs (and TPUs) allow _massively parallel_ computation and NN architectures are increasingly designed specifically to take advantage of this.
+
+Training the largest models now requires _supercomputers_. For example LUMI: 2560 GPU nodes with 4 AMD MI250X devices each (20480 "GPUs"). _Large GPU clusters_ and millions of euros of compute investment required to train largest language models. _Costs continue to increase_ as amount of compute used grows faster than its price drops.
+
+### Model architecture
+
+Prior to 2017 deep learning approaches to NLP mostly build on _recurrent neural networks_ (RNNs) with some applications of convolutional neural nets etc.
+
+Issues with RNN architecture include:
+
+* _Long-term dependencies_: Basic ("vanilla") RNNs are famously "forgetful", failing to make use of information from distant earlier tokens. RNN variants such as LSTMs and GRUs alleviate but do not solve the problem.
+* _Sequential processing_: RNNs require computation to be completed for token $N$ before computation for token $N+1$ can start, which limits the ability to make use of the massive parallelism that GPUs allow.
+
+In the 2017 the Transformer was proposed:
+
+* _Attention_ allows very long contexts
+* _Model scaling_ add layers / increase dimensinality
+* Efficient _parallelism_ for large-scale GPU training
+* _State-of-the-art (SOTA) results_, not just in NLP
+
+The original transformer architecture is the direct foundation for _three major classes_ of NN models, _hundreds of architecture variations_ and _100K+ specific models_
+
+### Transfer learning
+
+Generally _knowing one task can make it easier to learn a related task_. In transfer learning, _information from one task is used when learning another_. For NNs generally by reusing weights. For example we can use word2vec vectors to intialize the embedding layer weights.
+
+Key idea allowing very large NN models to be applied in NLP: _transfer learning with unnannotated data_
+
+* Pre-training: Learn "pure" LM on very large corpus of raw text
+* Fine-tuning: Train task-specific model on small corpus of annotated data
+
+Contrast, _raw text_ available from web crawls for example on scale of trillion words $10^{12}$. For _manually annotated corpora_ a million words $10^6$ is already quite large
+
+### Neural language models
+
+Deep learning LM:
+
+* Train a prediction-based neural LM where the NN is a deep model
+
+#### Transformer variations
+
+Transformer proposed for _machine translation_ in a sequence-to-sequence (text in, text out) setting
+
+Two major components:
+
+* ENCODER which interprets text in source language
+* DECODER which generates text in target language
+
+BOTH of these are deep stacks of _transformer_ blocks
+
+Three models derived from this architecture:
+
+* Encoder-only models, e.g. BERT
+* Decoder-only models, e.g. GPT
+* Encoder-decoder models e.g. T5
+
+##### Encoder-only models
+
+Training _Transformer encoder_ as a (birectional) LM produces models that are particularly effective at text classification and sequence labeling tasks
+
+Prototypical example: BERT the original encoder-only model:
+
+* 110M parameter ("base") and 340M parameter ("large") variants
+* Trained on corpus of _3B words_ for ~40 epochs (~130B tokens)
+
+Very large number of encoder-only models proposed since, but mostly not much more than 1B parameters
+BERT and similar models substantially increased SOTA when introduced and remain very effective tools for classification tasks in NLP
+
+##### Decoder-only models
+
+Training _Transformer decoder_ as a causal ("left-to-right") LM produces models that are particularly effective at generating text. Prototypical example: GPT family
+
+* GPT-1: 117M parameters, GPT-3 175B parameters
+* Trained on corpora ranging from 4 to 400GB of text
+
+Large number of _ever-larger_ decoder-only models created, largest of which details are public nearly _2T_ parameters
+
+GPT-like models are the main drivers behind the current generative AI craze.
+
+##### Encoder-decoder models
+
+Traininig the full, original encoder-decoder Transformer architecture as an LM produces effective models fro text-to-text tasks (e.g. translation)
+
+Prototypical example: _T5_:
+
+* Models ranging from _220M_ base model to 11B parameters
+* Trained for 34B tokens
+
+Encoder-decoder models are versatile, potentially combining the strengths of both enc-only and dec-only, also as an active area of research, but don't have the ubiquity of encoder-only nor the media attention of decoder-only models.
+
+### Capabilities and limitations of LMs
+
+#### Capabilities
+
+Many capabilities of large LMs emerge with scale. Larger models perform well in tasks that smaller fail. _Prompting_ and examples given as part of the prompt further improve results.
+
+#### Limitations
+
+* LMs hallucinate, can create imagine persons places context so forth.
+* LMs can be rude or unreasonable.
+* LMs learn and can emphasize biases
+  * e.g. racial
+  * gender specific work
+
+Very large neural language models trained on "naturally" occuring texts can be _amazingly good_ at predicting words in context (e.g. next word) but such training does not produce:
+
+* Models that can _follow instructions_
+* Models that can produce _coherent dialogue_
+* Models that are _aligned_ to human intrests (helpful, honest, harmless)
+
+Current efforts in LM development are increasingly focused on these aspects rather than improving "pure" LMs
+
+#### Training LMs to follow instructions
+
+1) STEP: Collect demonstration data and train a supervised policy. A prompt is sampled from our prompt dataset, A labeler demonstrates the desired output behaviour. This data is used to fine-tune GPT-3 with supervised learning
+2) Collect comparision data, and train a reward model. A prompt and several model outputs are sampled. A labeler ranks the outputs from best to worst. This data is used to train our reward model
+3) Optimize a policy against the reward model using reinforcement learning. A new prompt is sampled from dataset. The policy generates an output. The reward model calculates a reward for the output $r_k$. The reward $r_k$ is used to update the policy using PPO Proximal Policy Optimization.
+
+Fine-tuning with instruction data is basically the same process as pre-training. With sufficient numbers of examples of instructions, inputs and outputs the models can _generalize to new instructions_. Open instruction datasets with millions of examples exist, but _language coverage_ is limited
+
+#### Training LMs to dialogue
+
+Models can be trained to chat like ChatGPT similarly as for following instructions. Additional requirement is that data must include multiple "turns" between prompter and model rather than a single instruction-response cycle.
+
+_High-quality dialogue data_ is even more expensive to create than instruction data - less possibility to build on existing resources.
+
+Instruction fine-tuning makes it more likely that models generate text that is reponsive to instructions.
+
+## Impacts and future
+
+Transformers-based LMs demonstrated _state-of-the-art performance_ across a _very broad range of NLP tasks_ soon after they were introduced. In addition to_single models trained on sigle tasks_ outperforming previously proposed methods, neural LMs have contributed to a major shift towards unification in NLP in may ways:
+
+* _Methodological_: Diverse approaches replaced with few architectures
+* _From single- to multi-task_: Task-specific models replaced with general ones
+* _Global_: initial progress towards "one model to rule them all"
+
+Historically custom methods for each task, language, and often domain. For example a rule-based parser fro English biomedical text
+
+Since early 2000s, language-independent ML approaches popula but still with
+
+* Task-specific ML methods and often explicit features
+* Each combination of task, language and domain requires specific corpus for training and produces a model specific to that combination
+
+Recently _cross-lingual and multitas approaches_ increasingly successful
+
+* Single models can learn multiple tasks and generalize across task boundaries.
+
+With last few years increasing focus on the potential of one model for everything
+
+* Instruction following: "generally intelligent" model can perform _any_ task that can be described with natural language instructions
+* Massively multilingual models trained with text in dozens of languages can take input and produce output in any of those languages
+* Domain independence models trained with texts representing a broad range of domains, genres, etc. generalize across these
+
+Mention something about cherry-picking and caveats. far from perfect.
