@@ -360,40 +360,64 @@ MULTIPLE labels predicted from a larger base of labels
 ### Document classification as a ML problem
 
 * The text document needs to be reduced into a set of features
-* A classifier can then be trained on the task as usual
-* Input representation to a classifier tends to be fixed-length: a feature vector
-* The space of features is enormous (one feature for each possible word in the language leading to a very sparce vector)
-* Language tends not to be fixed
+
+Then _input_ for the ML classifier is a set of features and _output_ is some decision. The classifier can be trained based on this. One fundamential problem exists with ML models excluding the most modern ones: ML model expects a fixed length input === a feature vector.
+
+* Input representation to a classifier tends to be fixed-length: a feature vector. The space of features is enormous, one feature for each possible word in the language leading to very sparce feature vectors and that is a problem because the language tends not to be fixed.
+
+After creating the feature vector for whole _language_, and not the text then you can go through your text and see if it has this or that feature.
 
 #### BoW Bag of Words representation
 
-The feature vector has as many elements as there are words in the vocabulary. A non-zero value is set for words present in the document, zero for words absent. Any standard classifier can use this representation as its input
+The feature vector has as many elements as there are words in the vocabulary meaning the whole languages vocabulary. One element for each word and a non-zero value is set for every word that actually exists in the document.
+
+Different approaches:
+
+* Set a non-zero (e.g. 1) if the word exists how many ever times
+* Set a count for each word occurence
+
+Any standard classifier: decision tree, svm, perceptron can eat a representation like this because it is fixed!
 
 PLUS:
 
 * Simple and fast to compute
 * Works with any standard classifier
-* Deceptively simple -> may give suprisingly good results in many keyword-driven classification tasks
-* In many applications this can be the most bang for the buck solution!
+* Deceptively simple -> may give suprisingly good results in many keyword-driven classification tasks. A long document, not many classes.
+* In many applications this can be the most bang for the buck solution! SPAM filtering e.g.
 
 MINUS:
 
-* No encoding of order: "the dog chases the cat" has same representation as "the cat chases the dog"
+* No encoding of order: "the dog chases the cat" has same representation as "the cat chases the dog" (but many applications do not care about the order so much!)
 * Long, sparse feature vectors are a challenge for any ML techniques
 
 #### Multi-layer preceptron MLP
 
-One input for each vocabulary item (possible word) is set to 0 if absent, non-zero if present
+The simplest form of neural network. One input for each vocabulary item (possible word) set to 0 if absent in the document we are classifying, non-zero if present. One output for each possible class.
 
 ##### MLP in NLP
 
-The input layer width is massive - one inpt for each vocabulary item. Most inputs are set to zero, only those seen in the input text are set to a non-zero value. It is more natural to think in terms of "embeddings". Each possible input is assigned a trainable vector, its embeddings. These can then be summed, producing the input representation. This is fully equivalent to the traditional definition of MLP, the embedding simply corresponds to the weights fanning out from a single input node in the "classical" MLP
+* Training happens between the layers in the learnable weights. After hidden layers the output is a probability distribution that sum up to one and the highest probability wins!
+* Inputs -> weights -> net input function -> activation function -> output (non-linearity) -> as input for next layer. Hundreds hidden layers percent in modern systems
+* The input layer width is massive - on input for each vocabulary item. Most inputs are set to zero, only those seen in the input text are set to a non-zero value.
+* It is more natural to think in terms of "embeddings"
+* Each possible input is assigned to a trainable vector, its embedding
+* These can then be summed, producing the input representation
+* This is fullu equivalent to the traditional definition of MLP, the embedding simply corresponds to the weights fanning out from a single input node in the "classical" MLP
+
+###### MLP through the NLP lens
+
+Input: "the dog chaces the cat" -> embedding matrix (hold all words in vocabulary of language) -> determine weights for each word in the document (here sentence) ->sum up the embeddings of seen words to create one "hidden layer" value (prior to non-linear transformation) === TRAINABLE!
 
 ##### Embeddings
 
-Embeddings is a central concept in NLP.
+What are these embedding vectors, can be clustered. Words that somehow are related to eachother seem to get similar embeddings === close together in vector space. The similarity of two embeddings in the vector space "cosinesim" "eucledian dist" seems to correlate to our understanding how two words goes to eachother with their meanings.
+E.g the embedding for "dog" will be closer to embedding of "cat", than for example the embedding of "river". So embeddings have real meanings!
 
-A learned representation of an input feature, typically a dense vector of some hundreds to low thousands in length. Typically starts its life as a randomly initialized embedding matrix, then adjusted by the model during its training, and saved together with the model. The size of the embeddings matrix is one of the factors which dictate that we should keep our vocabulary quite limited (typically tens of thousands of items)
+Embedding starts its life as a randomly initialized embedding matrix, then adjusted by the model during its training, and saved together with the model! The size of the embeddings matrix is one of the factors which dictate that we should keep our vocabulary quite limited (typically tens of thousands of items)
+
+cross-entropy loss is the calculation to be used with classification
+
+No word order in the embedding vectors!
 
 ### Basic training pipeline - the practicalities
 
@@ -452,8 +476,8 @@ The Trainer class automatized this for us.
 
 Basic task setting:
 
-* Input: text represented as sequence of tokens
-* Output: label(s) for each _token_ from predefined categories
+* Input: text represented as sequence of tokens (most likely words)
+* Output of the model is: label or multiple labels for _EACH_ token from predefined categories
 
 For most tasks, exactly one label per token
 
@@ -465,13 +489,77 @@ Contrast with text/document classification: Label(s) for _text as whole_
   * Note potential confusion with "sequence classification" for document classification
 * Label, class and tag are here _largerly synonymous_ depending on task
 
-### SL Tasks
+### Sequence Labeling Tasks
 
-* POS - Part Of Speech tagging, labels: VERB, NOUN, ADJ, ...
+* POS - Part Of Speech tagging, labels: VERB, NOUN, ADJ, ... most classical example of sequence labeling task.
 * NER - Named Entity Recognition, labels: PERSON, LOCATION, ORGANIZATION, ...
-* Chunking / partial parsing, spans corresponding to for example verb and noun phrases
+* Chunking / partial parsing, spans corresponding to for example identifying what is a noun phrase or a verb phrase. Relevant text pre-processing task
+* segmentation text in to pieces -- tokenization is done by ML methods that boil down to  _SEQUENCE LABELING_ instead of regular expressions.
+* morphological tagging -- Morphological tagging is the task of assigning labels to a sequence of tokens that describe them morphologically. As compared to Part-of-speech tagging, morphological tagging also considers morphological features, such as case, gender or the tense of verbs.
+* semantic role labeling -- who does what to whom in the sentence
+* text zoning (introduction, methods, results, etc.)
 
-Also segmentation, morphological tagging, semantic role labeling, text zoning (introduction, methods, results, etc.) Generally any task involving marking _spans_
+Generally any task involving marking _spans_
+
+#### Example Part of speech tagging
+
+Identify _token spans_ constituting _mentions of names_ and assign the types:
+
+* Often extended to include also mentions of e.g. as times and dates
+* Note: names frequently span _multiple tokens_ in contrast of POS tagging!
+
+Span start and extend typically marked using IOB (aka BIO) tags or variation such as IOBES (adds [E]nd , [S]ingle)
+
+| item in span  | tag  |
+|---|---|
+| Barack  | B(egins)-Person  |
+| Obama  |  I(nside)-Person |
+| was  | O (outside)  |
+| born  | O (outside)  |
+| in  |  O (outside) |
+| Hawaii | B-Location |
+
+Super important subject BIO - IOB tagging!
+
+Still used in fanciest models ever span encoding in text.
+
+Also good to notice that certain sequences of tags are not legal (eg. B-Person followed by I-Location). Something to keep eye on when training the model.
+
+IOB tagging can be applied to mark any _continuous, non-overlapping_ spans of tokens and assign them to categories:
+
+* Phrases (chunks)
+* Argumentative zones
+* Semantic roles
+* Hedged claims (e.g. "may...")
+
+All of above can be generalized to NLP task TEXT ZONING.
+
+Unable to tag embedded tags inside entites (University of Turku) is an entity but Turku is also location. Thats why many datasets use "longest span" method to limit the problem and just stick to the longest spans available and annotate that.
+
+#### Character sequences
+
+Sequence labeling in NLP not limited to _token_ sequences
+
+Example, joint tokenization and sentence segmentation with labels
+
+* _token-break_: token ends after character
+* _sentence-break_: sentence ends after character
+* _inside_: no break after character
+
+INPUT: "Is it you?"
+
+| char | tag |
+|---|---|
+|I|inside|
+|s|token-break|
+| |token-break|
+|i|inside|
+|t|token-break|
+| |token-break|
+|y|inside|
+|o|inside|
+|u|token-break|
+|?|sentence-break|
 
 ### SL as feature generation
 
@@ -740,7 +828,7 @@ Solution: apply _smoothing_ to either counts or probability estimates to avoid z
 * Add-k smoothing: add fixed value k to counts (typically $k < 1$)
 * Advanced smoothing methods: Knerser-Ney, Good-Turing, etc.
 
-Alternatively when encountering a zero count, _back off_ from using an N-gram estimate to using an (N-1)-gram estimate 
+Alternatively when encountering a zero count, _back off_ from using an N-gram estimate to using an (N-1)-gram estimate
 
 #### Numerical precision
 
