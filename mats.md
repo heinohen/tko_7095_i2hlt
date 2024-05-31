@@ -563,52 +563,88 @@ INPUT: "Is it you?"
 
 ### SL as feature generation
 
-In a "traditional" NLP pipeline, sequence labeling tasks used in part to create features for later tasks, for example:
+In a "traditional" NLP pipeline:
+
+Sequence labeling is used as a pre-processing task to _generate features_ for the modules down the pipeline for e.g.:
 
 * Parts of speech serve as features to indentify noun and verb phrases (chunking)
 * Parts of speech and chunk tags serve as features to identify named mentions
 
 Explicit features introduced in this way generally not used in recent deep learning approaches, here still used for illustration and interpretability
 
+it used to be so that it is used to ENRICH THE INPUT FOR THE ML MODEL for later stages.
+
+Nowdays, sequence labeling is happening implicitly inside large neural networks. nowdays you dony see this pipeline very often, still very useful for illustration and interpretability causes.
+
+----> being phased out
+
 #### SL Challenges
 
 Ambiguity and context dependence:
 
-* POS tagging: "can" as noun vs. aux verb, "house" as noun vs. verb
-* NER: "Washington" as person vs. location, "Nokia" as organization vs. location
+* POS tagging:
+  * "can" as noun SUBSTANTIIVI (container with soup) vs. aux verb APUVERBI (can happen)
+  * "house" as noun (talo / koti) vs. verb (synonym for contain)
+* NER:
+  * PERSON: (george) "Washington" as PERSON vs. city or state in USA LOCATION
+  * "Nokia" as ORGANIZATION vs. city in finland LOCATION
+
+The actual beef of this task is to somehow take this _CONTEXT_ in to account!
 
 Label dependencies:
 
-* POS (DET, NOUN) likely e.g "the dog", (DET,VERB) unlikely e.g "this is"
-* NER (B-PERSON, I-PERSON) is valid, (B-PERSON, I-ORGANIZATION) is invalid
+* POS:
+  * Determiner ("the", "a") + noun ("dog", "cat") pair (TARKENNE, SUBSTANTIIVI) (DET, NOUN) is very likely e.g "the dog". BUT Determiner + verb (DET,VERB) is very unlikely e.g "this is", "a is"
+
+Dependencies across the labels are highly relevant!
+
+* NER:
+  * (B-PERSON, I-PERSON) is valid and quite likely sequence of labels, (B-PERSON, I-ORGANIZATION) is invalid, very unlikely and should practically never happen. And if it happens, it means that there is mistake in the data!
+
+As for dataset, there usually is some of these errors inside.
+
+But for model side it should "never" see sequences like that or predict sequence labels like that.
 
 ### SL Representation
 
-Build on ideas from document classification:
+Build on idea of the ideas from document classification:
 
-* Supervised machine learning: train model based on annotated corpus
-* Explicitly defined features: manually build appropriate features for task
+* Supervised machine learning: Train model based on annotated corpus
+* Explicitly defined features: Manually build appropriate features for task
 
-By contrast to document classification approach, we _cannot_ apply a simple bag-of-words approach to sequence labeling and
-hope for good results
+In contrast to document classification it will be difficult to implement simple bag-of-words approach because there will not be enough of discriminating power for example
 
-* Losing order of words would make many cases _undecidable_
-* Consider "We can see a can"
+* "we can see a can" and you need to decide the POS tag for the word "can" in these two positions of the sentence. Thats why you just cannot feed this sentence as a BoW to a classifier because both of these _can_'s will have the same representation and you cannot make the distinction between.
 
-We _cannot_ simply consider each token as its own "document" == needs context, or just make a BOW from a whole sentence == cannot differentiate!
+LOSING ORDER OF WORDS WOULD MAKE MANY CASES
+
+POS tagging is easy for 80% of the cases, but the remaining 20% is very hard
+
+#### Problems
+
+Representations as just one bag-of-words "document" per token for POS tagging would'nt work, because "can"(purkki) NOUN and "can"(voida) AUX would get the same (wrong) TAG
+
+Representing the entire document as a bag-of-words wouln't work either because the most common tag i.e. PUNCTS
+would get predicted for everything that would make the classifier very bad
+
+We _CANNOT_ simply consider each token as its own "document" because we need context, OR just make one bag-of-words from the whole document because then we cannot differentiate.
 
 Instead we'll here rely on two well-tested ideas for representing text for sequence labeling:
 
-1) Context windows: Create features form fixed-size "window" of tokens before and after each token we're classifying
-2) Relative positions: Represent the position of context tokens and their features with respect to the token we're classifying.
+ 1) Context windows: Create features from fixed-size "window" of tokens before and after each token we're classifying. In many tasks the desicion is relatively LOCAL. So whether a word is a NOUN or a VERB you usually don't have to look for 2-3 pages in both directions.
+ 2) Relative positions: Represent the position of _context tokens_ and their features with respect to the token we're classifying. Represent the positions of the things with respect to the word we are classifying
 
 #### SL Context window
 
-Most sequence labeling decisions are comparatively _local_, with distant tokens contributing little useful information
+Most sequence labeling decisions are comparatively _local_, with distant tokens contributing little useful information.
 
-* Especially POS tagging and other morphology-level labeling largely sentence-internal
+This is good to use in especially POS tagging and other morphology-level labeling largely _SENTENCE-INTERNAL_
 
-For classifying a token, only represent information from its immediate context instead of e.g entire document.
+for example a sentence "We can house them in this house ."
+
+if the window is on the first house. Look for one word behind and one word ahead: "can house them", in this context it is clear that the POS tag for the word under classifying is VERB (put something inside of smth).
+
+Adn when the context window slides ahead for the end of sentence "this house ." We can see that the word house now gets a POS tag of a NOUN (a place to live in)
 
 #### SL Relative positions
 
@@ -617,7 +653,17 @@ The _order_ in which tokens appear in the input is key to many sequence labeling
 * "can see a..." -> "can" is auxiliary verb
 * "see a can..." -> "can" is noun
 
-The key piece of information is _not_ absolute position in the input, but relative position with respect to the token being labeled
+``` python
+-2   -1 0     +1    +2  +3    +4
+We  can house them  in  this  house
+```
+
+The key piece of information is _not_ absolute position in the input, but relative position with respect to the token being labeled. It is HIGHLY relevant to know the word that is JUST before the word we are tagging or further away from it.
+
+for example:
+
+* CAN HOUSE: certainly we are looking at a AUX, VERB pair
+* THIS HOUSE: certainly we are looking at a DET, NOUN pair
 
 Explicitly encode relative position to focus word in features
 
