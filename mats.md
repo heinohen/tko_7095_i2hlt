@@ -670,10 +670,13 @@ Explicitly encode relative position to focus word in features
 ##### Explicit features
 
 For document classification each word form was used as its own separate feature
+Depending on what we have available, for POS tagging we can start looking at the words themselves.
+
+For NLP pipeline, after POS tagging you have them available and can be used as features
 
 * Features include eg ```cat```and ```dog```for words _cat_ and _dog_
 
-More generally we can explicitly define any feature we like
+More generally we can explicitly define any feature we like, especially intresing is the word one before the word we are classifying. The feature is the whole codeblock, not just the word `dog`
 
 We'll here represent these in text, for example:
 
@@ -681,63 +684,75 @@ We'll here represent these in text, for example:
 * ```pos[+1]=NOUN```the next token is a noun (POS tag has value NOUN)
 * ```chunk[0]=B-NP```the current token starts a noun phrase
 
+THESE CAN BE ADDED TO THE FEATUREVECTOR OF THE _WORD_ WE ARE CURRENTLY CLASSIFYING! THIS is important to understand.
+
 Note: these are _text strings_ representing the presence of a feature; there is nothing special about their form.
 
-Explicit feature representations allow us to represent arbitrary categorical information about the focus token and context tokens, e.g.
+These features can be fed to a classifier of which job is to generalize from this information.
 
-* Does the token start with a capital letter?
-* What are the last two characters of the token?
-* What two-word sequence (bigram) starts at the token?
-* Does the token appear in a list of known names?
-* Does the token consist only of letters / digits / puncts?
+For many tasks you might want to start generating features that you envision that can be useful besides the token itself:
+
+* FOR NER example: it is very useful to recognize that the word starts with a Capital letter === can be used as a feature in featurevector. Because for example names tend to start with capital letter.
+* For POS tagging in finnish: What are the last two characters of the token? finnish suffixes === can be added
+* Can look for token bigrams: "Which two words are usually together" === "George Washington" for example
+* Does the token appear in a list of known names
+* Does the token consist only of letters / digits / punctuation chars
 
 Categorical features can also be introduced for the window, sentence or document as a whole, and for some ML methods features can also be given weights TF/IDF
 
 ### SL Sum
 
-Each token in the dataset form its own example of classification, where:
+Each token in the deataset forms its own example for classification, where:
 
-* Features are generated from a _fixed-size window_ around the token
-* _Relative position_ with respect to the focus token is represented to capture word order and distance
-* _Explicit features_ are defined to represent relevant information about the focus token and other tokens in the window (surface form)
+* Features are generated from a _fixed-size window_ === CONTEXT WINDOW around the token (e.g. three preceding and following tokens) as the window glides through the text. The classifier truly classifies all of these windows. Can be done with MLP.
+* The _relative position_ with respect to the focus token is represented to capture word order and distance
+* _Explicit features_ are defined to represent relevant information about the focus token and other tokens in the window (e.g. surface form)
 
 We can use these as a "bag of features" with the MLP classifier
 
 #### What's still missing?
 
-For MLP represented is:
+In the MLP example, represented are:
 
 * Context window (locality)
-* Relative word order (sequence order, distance)
+* Relative word order (sequence information, distance to current)
 * Arbitrary categorical aspects of the input (explicit features)
 
-However, predictions for each token were made _independently_ of each other
+HOWEVER, predictions for each token were made _independently_ of each other:
 
 * No attempt to model label dependencies
-* May predict very unlikely or invalid label sequences
+* May predict very unlikey or invalid label sequences
 
 ### SL Methods
 
-Sequence labeling tasks can be addressed through _heuristic_ and _rule-based_ approaches
+Sequence labeling tasks can be addressed through _heurustic_ and _rule-based_ approaches:
 
-* For example, dictionary-based approach to NER: compile lists of known names with types (person etc), find occurences in the text
+* For example, _dictionary-based approach to NER: Compole lists of known names with types (person etc.) find occurences in the text
 
-State-of-the-art sequence labeling methods are based on supervised ML. Broadly speaking almost any ML method _can_ be used for sequence labeling. Methods that inherently capture sequential nature of data and can model _label dependencies_ are particularly good fit
+State-of-the-art sequence labeling methods are based on _supervised machine learning_
 
-Methods capturing sequential order and/or label dependency information include:
+Broadly speaking, almost any _machine learning methods_ can be used for sequence labeling
 
-* Hidden Markov Models (HMM)
-* Conditional Random Fields (CRF)
-* Recurrent Neural Network (RNN)
-  * Long Short-Term Memory (LSTM)
-  * Gated Recurrent Unit (GRU)
-* Transformer models
-  * Bidirectional (BERT)
-  * Encoder - Decoder (T5)
+Methods that inherently capture _sequential nature_ of data and can be model _label dependencies_ are particularly good fit
 
 ### SL Models
 
+Methods capturing sequential order and/or label dependecy information include
+
+* Hidden Markov Model (HMMs) === represent priority generation
+* Conditional Random Fields (CRFs) === represent priority generation, highly relevant in many fields
+* Recurrent Neural Networks (RNNs)
+  * Long Short Term Memory (LSTMs)
+  * Gated Recurrent Unit (GRU)
+* Transformer models
+  * Bidirectional (e.g. BERT)
+  * Encoder-decoder (T5)
+
+We won't go into detail on these but will discuss some _key ideas_
+
 #### Basics of graphical models
+
+##### HIDDEN MARKOV MODEL
 
 ![first](grap1.png)
 Two states (Sunny and cloudy) with probabilities of transitioning between the two ased on the current state: a _first-order_ markov model
@@ -773,7 +788,7 @@ Parameters can be straightforwardly set given annotated data
 
 _Token-level_ classification _accuracy_ (correct predictions out of all predictions) generally used to evaluate task
 
-For tasks invlving marking _spans_ (NER) performance typically measured on span level in terms of exact-match precision, recall and F_1 score
+For tasks involving marking _spans_ (NER) performance typically measured on span level in terms of exact-match precision, recall and F_1 score
 
 * Compare predicted and gold standard spans in terms of (start-token, end-token, type)
   * Only triples where all values match between predicted and gold are correct
@@ -783,161 +798,88 @@ For tasks invlving marking _spans_ (NER) performance typically measured on span 
 
 ## Language models
 
-### LM Definitions
+Unsupervised and semi-supervised approaches, transfer learning
 
-Task setting:
+Key motivation is that it is much easier to get lots of raw text than manually labeled data
 
-Learn to assign probabilities to sequences of words
+Raw text can be gathered from: _TENTTIKYSYMYS_
 
-* Input: corpus of raw, unannotated text (typically very large)
-* Output model that can estimate $P(w_1, w_2, w_3, ... , w_n)$ i.e how likely is the word sequence in the language
+* Simply download from internet
+* Publicly available datasets such
+  * Common Crawl
+  * Wikipedia
+  * IMDB reviews
+  * Book Corpuses such as: PROJEKTI LÖNNROT, project gutenberg
+* Crawl internet yourself (be in mind with copyrights and trademarks)
 
-Language modelling methods and uses changed dramatically over last decade
+problem going forward is data tainting through AI generated texts!
 
-* Traditionally: n-gram models (bigram, trigram, ...) and approaches based on _counting_
-* Recently: Neural network models (MLP, RNN, transformer) trained in _predicition_
+Focus now on _language models_ and _unsupervised_ and _self-supervised learning_
 
-Probability of word sequence estimated via probabilities of individual words in their context. Language models can be grouped into two broad categories by how that context is defined:
+Plan to go from:
 
-* Causal LMs: Estimate probability of word given previous words only only! (one-directiona, "left-to-right")
-* Bidirectional LMs: Estimate probability of word given both preceding and following words
+* Count-based language modeling
+* Prediction-based language modeling
+* Neural embeddings and word2vec
 
-Broadly speaking, causal LMs are particularly effective in _generation_ and bidirectional LMs in _classification_
+### Introduction
 
-#### LM Tasks
+Basic task setting: learn to assign probabilities to sequences of words
 
-##### Traditional tasks
+* Input: corpus of raw, UNANNOTATED data (typically very large)
+* Output: some kind of a model that can estimate $P(w_1, w_2, ... , w_3)$ === How likely is the word sequence in the language
 
-* Spell and grammar checking: Detecting and correcting errors in text
-* Short text generation: autocomplete, predictive text input
-* Speech recognition: phoneme and word prediction
+Language modeling methods and uses changed dramatically over last decade:
+
+* _Traditionally_ it was n-gram models (bigram, trigram, etc) and other approaches based on _COUNTING_
+* _Recently_: neural network models (MLP, RNN, transformer) trained in _PREDICITON_
+
+#### LM Definitions
+
+Probability of word sequence estimated via probabilities of individual words in their context
+
+Language mnodels can be grouped into two broad categories by how that context is defined:
+
+* Causal LMs:
+  * estimate probability of word given previous words _ONLY_
+  * one-directional, "left-to-right"
+  * _TENTTIKYSYMYS_
+  * Has history of the text, tries to predict the _most likely next word GIVEN this sequence of say 10 words_
+  * Used for language generation, because you know the history and you try to predict how to continue the text
+
+* Bi-directional LMs:
+  * estimate probability of word given both preceding and following words
+  * Try to understand as "What goes in to the hole in the context"
+  * same concept as humans do when learning languages in school, _close task_ "matt ___ to eat cereal" from ['likes', 'takes', 'bakes', 'makes'] ==> 'likes'
+  * You know the left-side context and right-side context and based on those you are supposed to predict what goes in the middle
+  * Does not work well for language generation, because it assumes you know something from the right-side of the _predictable slot_ in the text also
+  * Works better for classification!
+
+##### LM tasks
+
+"Traditional" tasks for language models:
+
+* Spell and grammar checking: detecting and correcting errors in text
+* Short text generation: autocomplete, predictive text input (causal language models)
+* Speech recognition: phoneme and word prediction (bi-directional) think of as "im not sure exactly what i heard" LM tries to predict the missing letter or word
 * Machine translation: ranking alternative translations
-* Language identification: which language is text most likely in
-* Text quality filtering
+* Language indentification: which language is text (most likely) in
+* Text quality filtering: remove texts with typos etc.
 
-Broadly tasks involving _identifying unlikely spans_ of text or _ranking alternatives_ by their likelihood or belonging to a language
+"Modern" tasks for language models (a small selection of...):
 
-##### Modern tasks
-
-* Chatbots: natular language dialogue on arbitrary topics
-* Question answering: providing relevant responses to queries
+* Chatbots: natural language dialogues on arbitrary topics
+* Question answering: prividing relevant responses to queries
 * Summarization: short abstractive versions of input text
-* Code completiong: software develpment support
+* Code completion: software development support _not in my opinion low-level cognitive task_
 * Machine translation: end-to-end translation, e.g. Finnish in, english out
 * Zero- or few-shot tasks: e.g. text classification with very few examples
 
-And many many more, increasingly any "low-lever" cognitive task that people can perform without training
-
-## Count-based language models
-
-Count-based modelling is a simple statistical approach to creating LMs. In the most typical case
-
-* Input: sequence of words $(w_1 w_2 w_3 ...)$ representing large text corpus
-* Output: model that can estimate probability of word given previous words $P(w_n | w_1 w_2 w_{n-1})$
-
-Approach is estimating probability P using occurence counts C in corpus. There is an obvious issue with naively applying the probability estimate. Namely for every longer sequences of words, _the counts will be zero_. Key challenge for count-based LMs is the _sparsity of the data_, almost all interesting non-trivial texts will be entirely novel == new and original.
-
-Example: What is the next word in the headline:
-"Trump faces 'Real Danger Zone' from Mike Pence ..."?
-
-### N-grams
-
-_Data is finite_ and the counts of almost all longer word sequences will be zero.
-
-Solution: instead of using the full "history" of previous words, only consider the previous _N_ words
-
-* Bigram model: $P(w_n | w_{1:n-1})$
-* Trigram model: $P(w_n | w_{n-2:w-1})$
-* 4-gram model: $P(w_n | w_{n-3} w_{n-2} w_{n-1})$
-
-Roughly in practice, bigram and trigram models simple to make but weak, 4- and 5-gram require substantial data, and larger than 7-gram rare due data requirements
-
-N-gram model can be estimated from counts using _maximum likelihood estimate_
-
-$P(w_n | w_{n-N+1:n-1}) = C(w_{n-N+1:n}) / C(w_{n-N+1:n-1})$
-
-For example, for a bigram model we have simply:
-
-$P(w_n | w_{n-1}) = C(w_{n-1:n})/C(w_{n-1})$
-
-The probability estimate for a longer text can then be calculated using the _chain rule_
-
-$P(w_1,...w_n) = \prod_{k \in \{1,...,n\}}P(w_k|w_{k-N+1:k-1})$
-
-#### Smoothing and backoff
-
-N-grams make count-based approach _possible_, but _zero counts_ will remain. Zero counts lead to $P(words) = 0$ estimates, which is useless for most applications.
-
-Solution: apply _smoothing_ to either counts or probability estimates to avoid zeros
-
-* Add-one smoothing == Laplace smoothing: simply add 1 to all counts
-* Add-k smoothing: add fixed value k to counts (typically $k < 1$)
-* Advanced smoothing methods: Knerser-Ney, Good-Turing, etc.
-
-Alternatively when encountering a zero count, _back off_ from using an N-gram estimate to using an (N-1)-gram estimate
-
-#### Numerical precision
-
-Applying the chain rule to estimate the probabilities of a longer text involves _multiplying togeher many small probabilities_
-
-Mathematically this is fine, but computers have limited ability to represent very small or very large values
-
-remember float restrictions!
-
-Solution: use log probabilities:
-
-$p_1 \cdot p_2\cdot...\cdot p_n = exp(log(p_1)+log(p_2)+...+log(p_n))$
-
-### Generation
-
-Given a causal language model, it's straightforward to generate text:
-
-1) Initialize _text_ to desired "prompt" or a start-of-text token (e.g. `<s>`)
-2) Select next word _w_ from $P(w | text)$ and append it to _text_
-3) Repeat previous step as long as desired (e.g. max-tokens or `</s>` sampled)
-
-A naive selection strategy for step 2. is to always take the _most likely next word_ w:
-
-$argmax_wP(w|text)$
-
-BUT this type of _greedy decoding_ often gets trapped in repetition loops:
-
-```"I don't know. I don't know. I don't know".```
-
-and only produces "predictable" text. Strategies for better generation than greedy decoding include
-
-* Randomly sampling the next word from the distribution $P(w | text)$
-  * _Temperature_ parameter to (de)emphasize likely words
-  * Limiting to _top-k words_ or a probability treshold (_top-p_ aka _nucleus sampling_)
-* _Beam search_ to find likely sequences that start with a less likely word
-* Filtering for redundancies, "bad words", etc
+... and many many more; increasingly any "low-level" cognitive task that people can perform without training
 
 ![generation](generation.png)
 
-### Evaluation
-
-Two common settings for LM evaluation:
-
-1) Use _text to evaluate model_ or compare models, which assumes good text
-2) Use _model to evaluate texts_, which assumes good model
-
-For either case, the most common evaluation metric for LMs is _perplexity_ (PPL), the inverse probability of text normalized by the number of words
-
 $PPL(w_1w_2...w_n) = P(w_1w_2...w_n)^{-1/N}=\sqrt[n]{\frac{1}{P(w_1w_2...w_N)}}$
-
-PPL can be thought of as the weighted average number of words that can follow a word.
-
-### N-gram limitations
-
-N-gram models have been a key tool in NLP for decades, but have their clear limitations:
-
-* _Limited use of context_ due to short history (N) and unidirectionality
-* _Data sparcity_ means difficult estimating rare N-grams
-* _High resource usage_ due to storage of large N-gram tables
-* _No word similarity_ `cat != dog`, `cat != hat`
-* Fixed vocabulary, out-of-vocabulary (OOV) words
-
-## Prediction-based language models
 
 Basic setup dentical to count-based models:
 
