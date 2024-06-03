@@ -419,7 +419,6 @@ cross-entropy loss is the calculation to be used with classification
 
 No word order in the embedding vectors!
 
-
 Language model solves in the end quite complex task. Prediciting the next word is by no means easy. Requires a good understanding of the language structure. Requires word knowledge (!) These properties make language modelling a good general task to learn representations of text units == embeddings
 
 * Focus on _word_ embeddings
