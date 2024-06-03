@@ -419,6 +419,12 @@ cross-entropy loss is the calculation to be used with classification
 
 No word order in the embedding vectors!
 
+
+Language model solves in the end quite complex task. Prediciting the next word is by no means easy. Requires a good understanding of the language structure. Requires word knowledge (!) These properties make language modelling a good general task to learn representations of text units == embeddings
+
+* Focus on _word_ embeddings
+* In later courses we expand to longer text segments
+
 ### Basic training pipeline - the practicalities
 
 * Data with text and labels usually split in to train, validation and test sections
@@ -888,18 +894,32 @@ Basic setup dentical to count-based models:
 
 Instead of deriving $P(words)$ from counts, predict it directly. Basically any method capable of learning to predict a probability distribution is applicable, but in practice focus on _neural network_ models: MLP, RNN, etc.
 
+## Prediction-based LMs
+
+Basic setup indentical to count-based models:
+
+* Input: a sequence of words $(w_1, w_2,...)$ representing a large text corpus
+* Output: a model that can estimate probability of word ginve previous words $P(w_n, | w_1,w_2,...w_{n-1})$
+
+BUT instead of deriving $P(words)$ from counts, predict it directly
+
+Basically any method capable of learning to predict a probability distribution is applicable, but in practice focus on neural network models: MLP, RNN, etc.
+
 ### LMs as representation learners
 
-Language model solves in the end quite complex task. Prediciting the next word is by no means easy. Requires a good understanding of the language structure. Requires word knowledge (!) These properties make language modelling a good general task to learn representations of text units == embeddings
-
-* Focus on _word_ embeddings
-* In later courses we expand to longer text segments
+* Language model solves in the end quite a complex task
+* Prediction the next word is by no means easy
+* Requires a good understanding of the language structure
+* Requires world knowledge (!)
+* These properties make language modelling a good general task to learn representations of text unit === embeddings!
+  * In this context focus on word embeddings
+  * In later courses we expand to longer text segments
 
 #### Two-sided context
 
 Language models are traditionally causal (left-to-right). This is due to how they were typically used in applications.
 
-* E.g. speec recognition lattice decoder
+* E.g. speech recognition lattice decoder
 
 For representation/embedding learning, we can also consider language models with two-sided context. This is due we do not benefit from causality, almost the contrary.
 
@@ -907,10 +927,13 @@ For representation/embedding learning, we can also consider language models with
 
 `Yle website targeted in ____ attack`
 
-Given this context, we want to predict the missing word, as a distribution. Word2vec is a very influential model in NLP. Makes two simplifying assumptions:
+* Given this context, we want to predict the missing word, as a distribution
+* Word2vec is a very influential model in NLP
+* Makes two simplifying assumptions:
+  * Limit the left and right context window length (typical is approx 5 words to the left and to the right)
+  * Disregard word order
 
-* Limit the left and right context window length
-* Disregard word order
+Word2vec loses order of words
 
 ##### Language modelling as BoW classification problem
 
